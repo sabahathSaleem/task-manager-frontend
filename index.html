@@ -60,17 +60,14 @@
         const [error, setError] = React.useState("");
 
         function loadTasks() {
-          fetch(API_URL + "/tasks")
-            .then(res => {
-              if (!res.ok) throw new Error("Failed to load tasks");
-              return res.json();
-            })
-            .then(data => setTasks(data))
-            .catch(err => {
-              console.error(err);
-              setError("Could not load tasks");
-            });
-        }
+		  fetch(API_URL + "/tasks")
+			.then(res => res.json())
+			.then(data => {
+			  console.log("TASKS FROM API:", data); // 🔴 DEBUG LINE
+			  setTasks(data);
+			})
+			.catch(err => console.error("Fetch error:", err));
+		}
 
         React.useEffect(loadTasks, []);
 
