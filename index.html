@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Task Manager</title>
 
     <!-- React CDN -->
@@ -29,11 +30,19 @@
         margin-left: 6px;
         cursor: pointer;
       }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
       ul {
         margin-top: 20px;
       }
       li {
         margin-bottom: 6px;
+      }
+      .error {
+        color: red;
+        margin-top: 10px;
       }
     </style>
   </head>
@@ -47,30 +56,45 @@
       function App() {
         const [tasks, setTasks] = React.useState([]);
         const [title, setTitle] = React.useState("");
+        const [loading, setLoading] = React.useState(false);
+        const [error, setError] = React.useState("");
 
-        // Load tasks on page load
         function loadTasks() {
           fetch(API_URL + "/tasks")
-            .then(res => res.json())
+            .then(res => {
+              if (!res.ok) throw new Error("Failed to load tasks");
+              return res.json();
+            })
             .then(data => setTasks(data))
-            .catch(err => console.error("Fetch error:", err));
+            .catch(err => {
+              console.error(err);
+              setError("Could not load tasks");
+            });
         }
 
         React.useEffect(loadTasks, []);
 
         function addTask() {
-          if (!title.trim()) return;
+          if (!title.trim() || loading) return;
+
+          setLoading(true);
+          setError("");
 
           fetch(API_URL + "/tasks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ title })
           })
-            .then(() => {
-              setTitle("");      // clear input
-              loadTasks();       // 🔑 refresh list
+            .then(res => {
+              if (!res.ok) throw new Error("Failed to add task");
+              setTitle("");
+              loadTasks();
             })
-            .catch(err => console.error("Add error:", err));
+            .catch(err => {
+              console.error(err);
+              setError("Failed to add task");
+            })
+            .finally(() => setLoading(false));
         }
 
         return React.createElement(
@@ -79,14 +103,23 @@
 
           React.createElement("h1", null, "Task Manager"),
 
-          React.createElement("div", null,
+          React.createElement(
+            "div",
+            null,
             React.createElement("input", {
               value: title,
               placeholder: "Enter task",
-              onChange: e => setTitle(e.target.value)
+              onChange: e => setTitle(e.target.value),
+              onKeyDown: e => e.key === "Enter" && addTask()
             }),
-            React.createElement("button", { onClick: addTask }, "Add")
+            React.createElement(
+              "button",
+              { onClick: addTask, disabled: loading },
+              loading ? "Adding..." : "Add"
+            )
           ),
+
+          error && React.createElement("div", { className: "error" }, error),
 
           React.createElement(
             "ul",
