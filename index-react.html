@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Task Manager - Full Stack</title>
+
+  <!-- React 17 -->
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      margin: 0;
+    }
+    header {
+      background: #222;
+      color: white;
+      padding: 16px;
+      text-align: center;
+    }
+    main {
+      max-width: 600px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+    }
+    form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input {
+      flex: 1;
+      padding: 8px;
+    }
+    button {
+      padding: 8px 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+
+    function App() {
+      const [tasks, setTasks] = React.useState([]);
+      const [input, setInput] = React.useState("");
+
+      // Load tasks from backend
+      function loadTasks() {
+        fetch("https://task-manager-backend-4cy6.onrender.com/tasks")
+          .then(res => res.json())
+          .then(data => setTasks(data));
+      }
+
+      // Run once when page loads
+      React.useEffect(() => {
+        loadTasks();
+      }, []);
+
+      // Add task via backend
+      function addTask(e) {
+        e.preventDefault();
+        if (input.trim() === "") return;
+
+        fetch("http://localhost:3000/tasks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ task: input })
+        })
+        .then(() => {
+          setInput("");
+          loadTasks(); // refresh from backend
+        });
+      }
+
+      return (
+        <div>
+          <header>
+            <h1>Task Manager</h1>
+          </header>
+
+          <main>
+            <form onSubmit={addTask}>
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder="Enter task"
+              />
+              <button>Add</button>
+            </form>
+
+            <ul>
+				{tasks.map(task => (
+				<li key={task.id}>
+				{task.title}
+				</li>
+				))}
+			</ul>
+
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+
+  </script>
+</body>
+</html>
